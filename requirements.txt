@@ -3,3 +3,5 @@ pytest
 fastapi
 uvicorn
 pydantic
+celery
+redis

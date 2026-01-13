@@ -10,3 +10,21 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - API_TOKEN=${API_TOKEN}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  worker:
+    build: .
+    command: celery -A celery_app worker --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Note: Worker might not need API_TOKEN unless it calls the API, but it might need other envs if used
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine

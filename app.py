@@ -60,3 +60,35 @@ def scrape_google_maps(request: ScrapeRequest, api_key: str = Depends(get_api_ke
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+# Async Endpoints
+import celery_app
+from celery.result import AsyncResult
+
+@app.post("/scrape/task", status_code=202)
+def scrape_task_endpoint(request: ScrapeRequest, api_key: str = Depends(get_api_key)):
+    """
+    Start an asynchronous scraping task.
+    Returns a task_id to check status later.
+    """
+    task = celery_app.scrape_task.delay(request.query, request.headless)
+    return {"task_id": task.id, "status": "Pending"}
+
+@app.get("/scrape/tasks/{task_id}")
+def get_task_status(task_id: str, api_key: str = Depends(get_api_key)):
+    """
+    Check the status of a scraping task.
+    """
+    task_result = AsyncResult(task_id, app=celery_app.app)
+    
+    response = {
+        "task_id": task_id,
+        "status": task_result.status,
+    }
+    
+    if task_result.status == 'SUCCESS':
+        response["result"] = task_result.result
+    elif task_result.status == 'FAILURE':
+        response["error"] = str(task_result.result)
+        
+    return response
