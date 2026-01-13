@@ -4,9 +4,9 @@ services:
   scraper-api:
     build: .
     ports:
-      - "8000:8000"
+      - "8005:8000"
     volumes:
       - .:/app
     environment:
       - PYTHONUNBUFFERED=1
-      - API_TOKEN=mysecrettoken
+      - API_TOKEN=${API_TOKEN}
