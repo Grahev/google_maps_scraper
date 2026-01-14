@@ -11,6 +11,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
+import redis
+
+# Redis Configuration
+REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+redis_client = redis.Redis.from_url(REDIS_URL)
+
 API_KEY_NAME = "access_token"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
@@ -69,6 +75,12 @@ def scrape_task_endpoint(request: ScrapeRequest, api_key: str = Depends(get_api_
     Returns a task_id to check status later.
     """
     task = celery_app.scrape_task.delay(request.query, request.headless, request.limit)
+    # Store task ID in history
+    try:
+        redis_client.lpush("job_history", task.id)
+    except Exception as e:
+        print(f"Error storing job history: {e}")
+        
     return {"task_id": task.id, "status": "Pending"}
 
 @app.get("/scrape/tasks/{task_id}")
@@ -89,3 +101,17 @@ def get_task_status(task_id: str, api_key: str = Depends(get_api_key)):
         response["error"] = str(task_result.result)
         
     return response
+
+@app.get("/scrape/jobs")
+def get_job_history(api_key: str = Depends(get_api_key)):
+    """
+    Get a list of all executed job IDs.
+    """
+    try:
+        # Get all items from the list
+        job_ids = redis_client.lrange("job_history", 0, -1)
+        # Convert bytes to string
+        job_ids = [jid.decode('utf-8') for jid in job_ids]
+        return {"jobs": job_ids, "count": len(job_ids)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
