@@ -9,13 +9,13 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 app = Celery('scraper_app', broker=REDIS_URL, backend=REDIS_URL)
 
 @app.task(bind=True)
-def scrape_task(self, query: str, headless: bool = True):
+def scrape_task(self, query: str, headless: bool = True, limit: int = 10):
     """
     Celery task to run the scraper.
     """
-    print(f"Starting scrape task for query: {query}")
+    print(f"Starting scrape task for query: {query} with limit: {limit}")
     try:
-        results = scraper.run(query, headless=headless)
+        results = scraper.run(query, headless=headless, limit=limit)
         return results
     except Exception as e:
         # You might want to log the error specifically

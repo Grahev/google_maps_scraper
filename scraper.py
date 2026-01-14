@@ -13,7 +13,7 @@ def load_selectors(filepath="selectors.json"):
     with open(filepath, 'r') as f:
         return json.load(f)
 
-def run(query, headless=True):
+def run(query, headless=True, limit=10):
     selectors = load_selectors()
     results = []
 
@@ -65,6 +65,11 @@ def run(query, headless=True):
                 # Check if we've reached the end or simply not loading more
                 current_cards = page.query_selector_all(selectors["result_card"])
                 current_count = len(current_cards)
+                
+                # Stop if we have enough cards
+                if current_count >= limit:
+                    print(f"DEBUG: Reached limit of {limit} cards (found {current_count}). Stopping scroll.", file=sys.stderr)
+                    break
                 
                 if current_count == last_count:
                     # Try one more small scroll/wait to be sure
@@ -168,6 +173,10 @@ def run(query, headless=True):
                 
                 if data["name"]:
                     results.append(data)
+                
+                if len(results) >= limit:
+                    print(f"DEBUG: Reached limit of {limit} results.", file=sys.stderr)
+                    break
                 
             except Exception as e:
                 print(f"Error scraping card: {e}", file=sys.stderr)

@@ -37,6 +37,7 @@ def get_api_key(api_key_header: str = Security(api_key_header)):
 class ScrapeRequest(BaseModel):
     query: str = Field(..., description="Search query for Google Maps (e.g., 'restaurants in New York')")
     headless: bool = Field(True, description="Run browser in headless mode")
+    limit: int = Field(10, description="Maximum number of results to scrape", ge=1)
 
 class BusinessResult(BaseModel):
     name: Optional[str] = None
@@ -51,9 +52,8 @@ def scrape_google_maps(request: ScrapeRequest, api_key: str = Depends(get_api_ke
     Scrape Google Maps for business information.
     Required Header: access_token
     """
-    try:
-        results = scraper.run(request.query, headless=request.headless)
-        return results
+    results = scraper.run(request.query, headless=request.headless)
+    return results
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
@@ -68,7 +68,7 @@ def scrape_task_endpoint(request: ScrapeRequest, api_key: str = Depends(get_api_
     Start an asynchronous scraping task.
     Returns a task_id to check status later.
     """
-    task = celery_app.scrape_task.delay(request.query, request.headless)
+    task = celery_app.scrape_task.delay(request.query, request.headless, request.limit)
     return {"task_id": task.id, "status": "Pending"}
 
 @app.get("/scrape/tasks/{task_id}")
