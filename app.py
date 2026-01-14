@@ -54,9 +54,6 @@ def scrape_google_maps(request: ScrapeRequest, api_key: str = Depends(get_api_ke
     try:
         results = scraper.run(request.query, headless=request.headless)
         return results
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
