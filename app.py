@@ -115,3 +115,10 @@ def get_job_history(api_key: str = Depends(get_api_key)):
         return {"jobs": job_ids, "count": len(job_ids)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+from fastapi_mcp import FastApiMCP
+
+# Initialize MCP Server
+mcp = FastApiMCP(app)
+mcp.mount_http()
+
