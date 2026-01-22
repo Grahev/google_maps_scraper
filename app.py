@@ -23,15 +23,9 @@ api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 def get_api_key(api_key_header: str = Security(api_key_header)):
     expected_token = os.environ.get("API_TOKEN")
     if not expected_token:
-        # If API_TOKEN is not set in env, allow access (or you could decide to block)
-        # For security, better to default to block or warn. 
-        # Here we will assume if no token is set server-side, auth is disabled/open, 
-        # OR we could enforce it. Let's enforce it if the user wants "auth".
-        # But for "simple" usage, let's say if env var is missing, raise error configuration 
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server authentication configuration error: API_TOKEN not set"
-        )
+        # If API_TOKEN is not set, allow access (WARNING: Insecure)
+        print("WARNING: API_TOKEN not set. Authentication disabled.")
+        return None
         
     if api_key_header == expected_token:
         return api_key_header
